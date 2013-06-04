@@ -4,7 +4,7 @@ module Jawbone
   
   class Session
     
-    attr_accessor :token
+    attr_accessor :token, :user
     
     include HTTParty
     
@@ -18,16 +18,24 @@ module Jawbone
       else
         response = self.class.post "https://jawbone.com/user/signin/login", { query:
           { service: "nudge", email: email, pwd: password } }
-        @token = response["token"]        
+        @token = response["token"]  
+        @user = response["user"]      
       end
     end
     
     def feed
       response = self.class.get "https://jawbone.com/nudge/api/users/@me/social", { query:
-        { after: "null", limit: 100, _token: @token } }
+        { after: "null", limit: 30, _token: @token } }
       response["data"]["feed"]
+      response
     end
     
+    def feed2 id
+      response = self.class.get "https://jawbone.com/nudge/api/users/#{id}/social", { query:
+        { after: "null", limit: 30, _token: @token } }
+      response["data"]["feed"]
+    end
+
     def sleeps(feed = feed)
       feed.select { |e| e["type"] == "sleep" }
     end
@@ -49,10 +57,11 @@ module Jawbone
     # requires date to be in yyyy-mm-dd format
     def daily_summary date
       # assumes Pacific Time
-      response = self.class.get "https://jawbone.com/nudge/api/users/@me/healthCredits", { query:
+      response = self.class.get "https://jawbone.com/nudge/api/users/@me/score", { query:
         { _token: @token, check_levels: 1, eat_goal: 0, sleep_goal: 0, move_goal: 0,
         timezone: "-28800", date: date } }
       response["data"]
+      response
     end
     
   end
